@@ -1,0 +1,6 @@
+[workspace]
+members = [
+  "libsynco",
+]
+
+resolver = "2"
