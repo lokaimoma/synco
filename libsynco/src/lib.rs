@@ -1,57 +1,40 @@
-use std::path;
+#![allow(dead_code)]
+use notify::{RecommendedWatcher, RecursiveMode, Watcher};
+use std::{collections::HashSet, path::Path};
+use thiserror::Error as ErrorTrait;
 
-#[derive(Debug)]
-pub struct File {
-    id: String,
-    alias: Option<String>,
-    name: String,
-    size: u64,
-    path: Option<path::PathBuf>,
+#[derive(Debug, ErrorTrait)]
+pub enum Error {
+    #[error("Failed to watch directory")]
+    WatchError(#[from] notify::Error),
 }
 
-#[derive(Debug)]
+type Result<T> = std::result::Result<T, Error>;
+
+pub struct SyncManager {
+    watcher: RecommendedWatcher,
+    watched_dirs: HashSet<Directory>,
+}
+
+impl SyncManager {
+    pub fn watch_dir(&mut self, d: Directory) -> Result<()> {
+        if !self.watched_dirs.contains(&d) {
+            if d.recursive {
+                self.watcher
+                    .watch(Path::new(&d.path), RecursiveMode::Recursive)?;
+            } else {
+                self.watcher
+                    .watch(Path::new(&d.path), RecursiveMode::NonRecursive)?;
+            }
+            self.watched_dirs.insert(d);
+        }
+        Ok(())
+    }
+}
+
+pub struct Connection;
+#[derive(PartialEq, Eq, Hash)]
 pub struct Directory {
-    id: String,
-    alias: Option<String>,
-    name: String,
-    size: u64,
-    files: Vec<File>,
-    path: path::PathBuf,
-}
-
-impl File {
-    pub fn new(
-        id: String,
-        alias: Option<String>,
-        name: String,
-        size: u64,
-        path: Option<path::PathBuf>,
-    ) -> Self {
-        Self {
-            id,
-            alias,
-            name,
-            size,
-            path,
-        }
-    }
-}
-
-impl Directory {
-    pub fn new(
-        id: String,
-        alias: Option<String>,
-        name: String,
-        size: u64,
-        path: path::PathBuf,
-    ) -> Self {
-        Self {
-            id,
-            alias,
-            name,
-            size,
-            files: Vec::new(),
-            path,
-        }
-    }
+    path: String,
+    recursive: bool,
 }

@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 notify = { version = "6.1.1", default-features = false, features = ["fsevent-sys", "serde"] }
+thiserror = "1.0.51"
